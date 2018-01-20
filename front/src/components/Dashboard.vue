@@ -64,32 +64,43 @@ export default {
     }
   },
   methods: {
+    updateQueryInfo(){
+      axios.get(`http://127.0.0.1:1337/query?code=${this.$route.params.id}`)
+        .then(response => {
+          console.log(response)
+          if (response.status === 200) {
+            const query = response.data[0]
+            this.adults = query.adults
+            this.completedJobs = query.completedJobs
+            this.createdAt = format(new Date(query.createdAt), 'MM/DD/YYYY')
+            this.destination = query.destination
+            this.email = query.email
+            this.fromDate = format(query.fromDate, 'MM/DD/YYYY')
+            this.jobs = query.jobs
+            this.maxDays = query.maxDays
+            this.minDays = query.minDays
+            this.origin = query.origin
+            this.toDate = format(query.toDate, 'MM/DD/YYYY')
+            this.totalJobs = query.totalJobs
+          }
+          this.onQueryInfoUpdated(query)
+        })
+        .catch(error => {
+          console.log(error);
+        });
+    },
+    onQueryInfoUpdated(query) {
+      if (query.completedJobs !== query.totalJobs) {
+        setTimeout(() => {
+          this.updateQueryInfo()
+        }, 1000)
+      }
+    }
   },
   computed: {
   },
   mounted() {
-    axios.get(`http://127.0.0.1:1337/query?code=${this.$route.params.id}`)
-      .then(response => {
-        console.log(response)
-        if (response.status === 200) {
-          const userData = response.data[0]
-          this.adults = userData.adults
-          this.completedJobs = userData.completedJobs
-          this.createdAt = format(new Date(userData.createdAt), 'MM/DD/YYYY')
-          this.destination = userData.destination
-          this.email = userData.email
-          this.fromDate = format(userData.fromDate, 'MM/DD/YYYY')
-          this.jobs = userData.jobs
-          this.maxDays = userData.maxDays
-          this.minDays = userData.minDays
-          this.origin = userData.origin
-          this.toDate = format(userData.toDate, 'MM/DD/YYYY')
-          this.totalJobs = userData.totalJobs
-        }
-      })
-      .catch(error => {
-        console.log(error);
-      });
+    updateQueryInfo();
   }
 }
 </script>
