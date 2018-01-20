@@ -37,7 +37,8 @@ const actions = {
     payload.code = uuid();
 
     try {
-      const { id, createdAt } = await Query.create(payload).fetch();
+      const query = await Query.create(payload).fetch();
+      const { id, createdAt } = query;
       const intervals = generateIntervals(payload);
 
       const jobs = [];
@@ -60,7 +61,7 @@ const actions = {
       });
 
       // Notify worker of new jobs
-      axios.post(workerUrl, { jobs });
+      axios.post(workerUrl, { jobs, query });
 
       // Send notify email
       const emailConfig = Object.assign(payload, { createdAt, type: 'notify' });
