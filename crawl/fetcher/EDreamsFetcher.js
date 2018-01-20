@@ -48,7 +48,7 @@ module.exports = class EDreamsFetcher {
         resolve({
           price: parsedPrice,
           provider: this.name,
-          link: 'edreams.com',
+          url,
         });
 
       } catch (e) {

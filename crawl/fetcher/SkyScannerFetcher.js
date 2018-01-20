@@ -48,7 +48,7 @@ module.exports = class SkyScannerFetcher {
         resolve({
           price: parsedPrice,
           provider: this.name,
-          link: 'skyscanner.com',
+          url,
         });
 
       } catch (e) {
