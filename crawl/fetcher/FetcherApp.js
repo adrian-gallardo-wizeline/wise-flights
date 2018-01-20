@@ -15,6 +15,11 @@ class FetcherApp {
   }
 
   async processJobs(jobs) {
+
+    if (jobs.length === 0) {
+      return;
+    }
+    
     const job = jobs.shift();
     let result;
 
@@ -31,23 +36,28 @@ class FetcherApp {
     console.log('Result processJobs', result);
   
     console.log('Pending jobs...', jobs.length);
-    if (jobs.length > 0) {
-      await this.processJobs(jobs, this.results);
-    }
+    
+    //Volvemos a llamar al proceso de manera recursiva
+    await this.processJobs(jobs, this.results);
   }
 
   async saveJobResult(job, result){
     const newData = {
       completed: true,
-      price: result,
-      provider: 'EDREAMS',
+      price: result.price,
+      provider: result.provider,
+      url: result.url,
     };
     const url = process.env.API_URL + '/job/' + job.id;
     console.log('update job', url, newData);
-    return axios.patch(url, newData).then(response => {
-      console.log('PATH RESULT', response.data);
-      return response.data;
-    });
+    try {
+      return axios.patch(url, newData).then(response => {
+        console.log('PATCH RESULT', response.data);
+        return response.data;
+      });  
+    } catch (e){
+      console.error('ERROR PATCH', e);
+    }
   }
 }
 

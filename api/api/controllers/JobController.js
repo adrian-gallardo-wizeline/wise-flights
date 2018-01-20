@@ -1,7 +1,7 @@
 const actions = {
   async update(req, res) {
     const { id } = req.params;
-
+    console.log('body', req.body)
     try {
       const [{ owner }] = await Job.update({ id })
         .set(req.body)
