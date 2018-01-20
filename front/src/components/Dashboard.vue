@@ -60,15 +60,15 @@
       </el-card>
     </div>
     <div id="results-table">
-      <el-table :data="jobs" stripe height="350" style="width: 100%">
+      <el-table :data="jobs" stripe style="width: 100%">
         <el-table-column prop="provider" label="Provider" sortable width="180" />
         <el-table-column prop="startDate" label="From" sortable width="180" />
         <el-table-column prop="endDate" label="To" sortable width="180" />
         <el-table-column prop="nights" label="Nights" sortable width="180" />
         <el-table-column prop="price" label="Price" sortable width="180" />
-        <el-table-column prop="url" label="Actions" sortable width="180">
+        <el-table-column prop="url" label="Actions" width="180">
           <template slot-scope="scope">
-            <el-button size="mini" @click="seeResult(scope.$index)">Go To Results</el-button>
+            <el-button size="mini" @click="seeResult(scope.$index)">Go To Result</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -102,6 +102,16 @@ export default {
   methods: {
     updateQueryInfo(){
 
+      const sortByPrice = (a, b) => {
+        if (a.price < b.price) {
+          return -1;
+        }
+        if (a.price > b.price) {
+          return 1;
+        }
+        return 0;
+      }
+
       axios.get(`http://127.0.0.1:1337/query?code=${this.$route.params.id}`)
         .then(response => {
           console.log(response)
@@ -115,6 +125,7 @@ export default {
             this.fromDate = format(query.fromDate, 'MM/DD/YYYY')
             this.jobs = query.jobs
                              .filter(job => job.completed)
+                             .sort(sortByPrice)
                              .map(job => ({ ...job, nights: differenceInDays(job.endDate, job.startDate) }))
             this.maxDays = query.maxDays
             this.minDays = query.minDays
@@ -144,7 +155,7 @@ export default {
   },
   computed: {
     jobsPercentage() {
-      return this.completedJobs * 100 / this.totalJobs
+      return Math.round(this.completedJobs * 100 / this.totalJobs);
     },
     completedJobs() {
       return this.jobs.filter(job => {

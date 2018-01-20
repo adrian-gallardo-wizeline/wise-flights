@@ -9,6 +9,19 @@
     <script src="https://unpkg.com/element-ui/lib/index.js"></script>
     <script src="//d3js.org/d3.v3.min.js"></script>
     <title>wiseflights-front</title>
+    <style>
+      .el-progress.is-success .el-progress-bar__inner {
+        transition: .6s width ease-in;
+      }
+
+      .el-table__row > td:nth-child(5) > div {
+        font-weight: bold;
+      }
+
+      .el-table__row > td:nth-child(5) > div::before {
+        content: 'MXN ';
+      }
+    </style>
   </head>
   <body>
     <div id="app"></div>
