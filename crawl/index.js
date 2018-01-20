@@ -2,32 +2,101 @@ const express = require('express');
 const axios = require('axios');
 const app = express();
 
+const bodyParser = require('body-parser');
+
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: false }));
+
 require('dotenv').config();
 
-const SkyScannerFetcher = require('./SkyScannerFetcher');
+const FetcherApp = require('./fetcher/FetcherApp');
 
-const PROVIDERS = {
-  SKYSCANNER: 'SKYSCANNER',
-  // EDREAMS: 'EDREAMS',
-};
-const MAX_RETRIES = 3;
+const fetcherApp = new FetcherApp();
+const JOBS = [];
 
-app.get('/awake', function (req, res) {
-  res.send('Hello World!');
+const testJobs = [
+  {
+    "createdAt": 1516423568921,
+    "updatedAt": 1516479688569,
+    "id": 1,
+    "startDate": "2018-02-01",
+    "endDate": "2018-02-10",
+    "completed": true,
+    "attempts": 0,
+    "url": "https://www.espanol.skyscanner.com/transporte/vuelos/COR/BUE/180201/180210?adults=1&children=0&adultsv2=1&childrenv2=&infants=0&cabinclass=economy&rtn=1&preferdirects=false&outboundaltsenabled=true&inboundaltsenabled=true&ref=day-view#results",
+    "price": 3559,
+    "provider": "SKYSCANNER",
+    "owner": {
+      "createdAt": 1516423217892,
+      "updatedAt": 1516479702216,
+      "id": 1,
+      "code": "",
+      "adults": 1,
+      "email": "agallardo@wizeline.com",
+      "origin": "COR",
+      "destination": "BUE",
+      "fromDate": "",
+      "toDate": "",
+      "minDays": 0,
+      "maxDays": 0,
+      "totalJobs": 0,
+      "completedJobs": 56
+    }
+  },
+  {
+    "createdAt": 1516469639684,
+    "updatedAt": 1516479702213,
+    "id": 2,
+    "startDate": "2018-02-02",
+    "endDate": "2018-02-10",
+    "completed": true,
+    "attempts": 0,
+    "url": "https://www.espanol.skyscanner.com/transporte/vuelos/COR/BUE/180202/180210?adults=1&children=0&adultsv2=1&childrenv2=&infants=0&cabinclass=economy&rtn=1&preferdirects=false&outboundaltsenabled=true&inboundaltsenabled=true&ref=day-view#results",
+    "price": 3559,
+    "provider": "SKYSCANNER",
+    "owner": {
+      "createdAt": 1516423217892,
+      "updatedAt": 1516479702216,
+      "id": 1,
+      "code": "",
+      "adults": 1,
+      "email": "agallardo@wizeline.com",
+      "origin": "COR",
+      "destination": "BUE",
+      "fromDate": "",
+      "toDate": "",
+      "minDays": 0,
+      "maxDays": 0,
+      "totalJobs": 0,
+      "completedJobs": 56
+    }
+  }
+];
+
+
+app.post('/newJobs', function (req, res) {
+  const jobs = req.body || [];
+  // const jobs = testJobs.concat();
+  console.log('-- INCOMING NEW JOBS --', jobs.length);  
+  res.sendStatus(200);
+  processJobs(jobs);
 });
 
 app.listen(process.env.PORT, function () {
+  console.log(`Listening on port ${process.env.PORT}!`);
   init();
-  console.log('Example app listening on port 3000!');
 });
 
 async function init() {
   const jobs = await getJobs();
-  const results = [];
+  processJobs(jobs);
+}
 
-  await processJobs(jobs, results);
-
-  console.log('done');
+async function processJobs(newJobs){
+  // JOBS.push(...newJobs);
+  // await fetcherApp.processJobs(JOBS);
+  await fetcherApp.processJobs(newJobs);
+  console.log('done', fetcherApp.getResults());
 }
 
 async function getJobs() {
@@ -38,96 +107,4 @@ async function getJobs() {
   }).then(response => {
     return response.data;
   });
-}
-
-async function processJobs(jobs, results){
-  const job = jobs.shift();
-  let result;
-
-  const jobProcessor = new JobProcessor(job, PROVIDERS);
-
-  try {
-    result = await jobProcessor.process();
-    results.push(result);
-  } catch (e){
-    console.log('Error processJobs')
-  }
-
-  console.log('Result processJobs', result);
-
-  console.log('Pending jobs...', jobs.length);
-  if(jobs.length > 0){
-    await processJobs(jobs, results);
-  }
-  
-}
-
-class JobProcessor {
-  constructor(job, providers){
-    this.job = job;
-    this.jobProvidersQueue = [];
-    this.providers = providers;
-  }
-
-  async process(){
-    const jobQueue = [];
-    
-    Object.values(this.providers).forEach(async provider => {
-      const jobFetcherProvider = this.getJobFetcherProvider(this.job, provider);
-      jobQueue.push(jobFetcherProvider.fetch());
-    });
-    return Promise.all(jobQueue).then(prices => {
-      let bestPrice = null;
-      prices.forEach(price => {
-        if(price){
-          if(!bestPrice){
-            bestPrice = price;
-          } else {
-            bestPrice = price;
-          }
-        }
-      });
-      console.log('bestPrice', bestPrice);
-      return Promise.resolve(bestPrice);
-    });
-  }
-
-  getJobFetcherProvider(job, provider){
-    switch(provider){
-      case PROVIDERS.SKYSCANNER:
-        return new FetcherStrategyRetry(SkyScannerFetcher, MAX_RETRIES, job);
-      case PROVIDERS.EDREAMS:
-        return new FetcherStrategyRetry(EDreamsFetcher, MAX_RETRIES, job);
-      break;
-    }
-  }
-}
-
-class FetcherStrategyRetry {
-  constructor(FetcherClass, maxRetries, job){
-    this.fetcherInstance = new FetcherClass()
-    this.job = job;
-    this.maxRetries = maxRetries;
-    this.attempts = 0;
-  }
-
-  async fetch(){
-    this.attempts++;
-    let result;
-    
-    if(this.attempts > this.maxRetries){
-      return Promise.resolve(null);
-    } else {
-      try {
-        result = await this.fetcherInstance.process(this.job);
-        console.log('Result', result);
-      } catch (e){
-        console.log('Error', e);
-        console.log('Retrying...', this.attempts + 1);
-        result = await this.fetch();
-        console.log('Result 2', result);
-      }
-      return result;
-    }
-  }
 }
