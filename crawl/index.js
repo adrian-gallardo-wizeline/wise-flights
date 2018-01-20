@@ -75,9 +75,20 @@ const testJobs = [
 
 
 app.post('/newJobs', function (req, res) {
-  const jobs = req.body || [];
+
+  const query = req.body.query || {};
+  const jobs = req.body.jobs || [];
+  
   // const jobs = testJobs.concat();
   console.log('-- INCOMING NEW JOBS --', jobs.length);  
+
+  jobs.forEach(job => {
+    job.owner = query;
+  });
+
+  console.log('query', query);
+  console.log('jobs', jobs);
+  
   res.sendStatus(200);
   processJobs(jobs);
 });
