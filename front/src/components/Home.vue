@@ -140,8 +140,8 @@ export default {
           .then(response => {
             if (response.status === 200 && response.data && response.data.code) {
               this.openModal(
-                `Please save your dashboard id: ${response.data.code}`,
-                'Dashboard ID',
+                `An email has been sent to your inbox with the link to access to the dashboard, so you can follow the progress anytime`,
+                'Query Created!',
                 { type: 'info', message: 'Dashboard created' },
                 () => {
                   this.$router.push({ path: `/dashboard/${response.data.code}` })

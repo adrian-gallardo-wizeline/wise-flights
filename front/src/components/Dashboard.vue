@@ -154,7 +154,8 @@ export default {
     onQueryInfoUpdated(query) {
       if (query.completedJobs !== query.totalJobs) {
         setTimeout(() => {
-          this.updateQueryInfo()
+          console.log('pooling...');
+          this.updateQueryInfo();
         }, 1000);
       }
     },
