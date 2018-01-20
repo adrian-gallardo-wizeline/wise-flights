@@ -1,3 +1,4 @@
+const uuid = require('uuid/v4');
 const moment = require('moment');
 
 const DATE_FORMAT = 'YYYY-MM-DD';
@@ -29,11 +30,30 @@ function* generateIntervals(payload) {
 
 const actions = {
 
-  create(req, res) {
+  async create(req, res) {
     const payload = req.body;
-    const intervals = generateIntervals(payload);
 
-    for (let interval of intervals) {
+    payload.code = uuid();
+
+    try {
+      const { id: owner } = await Query.create(payload).fetch();
+      const intervals = generateIntervals(payload);
+
+      const jobs = [];
+
+      for (let interval of intervals) {
+        const data = Object.assign(interval, { owner });
+        jobs.push(await Job.create(data));
+      }
+
+      await Promise.all(jobs);
+
+      res.json({});
+
+      // Notify scrapper
+
+    } catch (err) {
+      return res.serverError(err);
     }
   }
 
