@@ -1,6 +1,7 @@
 {
   "dependencies": {
     "axios": "^0.17.1",
+    "body-parser": "^1.18.2",
     "dotenv": "^4.0.0",
     "moment": "^2.20.1",
     "puppeteer": "^1.0.0"
