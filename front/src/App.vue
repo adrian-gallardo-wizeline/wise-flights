@@ -1,7 +1,7 @@
 <template>
   <div id="app">
     <el-container>
-      <el-header>
+      <el-header class="center">
         <img class="logo" src="./assets/logo.png" />
       </el-header>
       <el-main>
@@ -22,12 +22,14 @@ export default {
   font-family: 'Avenir', Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  text-align: center;
   color: #2c3e50;
   margin-top: 60px;
 }
 .logo {
   max-width: 200px;
   max-height: 200px;
+}
+.center {
+  text-align: center;
 }
 </style>
