@@ -8,7 +8,7 @@
 module.exports = {
   attributes: {
 
-    code: { type: 'string' },
+    code: { type: 'string', unique: true, required: true },
     adults: { type: 'number' },
     email: { type: 'string' },
     origin: { type: 'string' },
