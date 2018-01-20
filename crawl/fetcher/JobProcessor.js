@@ -4,6 +4,7 @@ const FetcherStrategyRetry = require('./FetcherStrategyRetry');
 
 const SkyScannerFetcher = require('./SkyScannerFetcher');
 const EDreamsFetcher = require('./EDreamsFetcher');
+const KayakFetcher = require('./KayakFetcher');
 
 class JobProcessor {
   constructor(job, providers) {
@@ -41,7 +42,9 @@ class JobProcessor {
         return new FetcherStrategyRetry(SkyScannerFetcher, constants.MAX_RETRIES, job);
       case constants.PROVIDERS.EDREAMS:
         return new FetcherStrategyRetry(EDreamsFetcher, constants.MAX_RETRIES, job);
-        break;
+      case constants.PROVIDERS.KAYAK:
+        return new FetcherStrategyRetry(KayakFetcher, constants.MAX_RETRIES, job);
+
     }
   }
 }
