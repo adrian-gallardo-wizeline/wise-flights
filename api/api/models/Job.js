@@ -10,7 +10,7 @@ module.exports = {
 
     startDate: { type: 'string' },
     endDate: { type: 'string' },
-    completed: { type: 'boolean', defaulsTo: false },
+    completed: { type: 'boolean', defaultsTo: false },
     attempts: { type: 'number', defaultsTo: 0 },
 
     url: { type: 'string', allowNull: true },
