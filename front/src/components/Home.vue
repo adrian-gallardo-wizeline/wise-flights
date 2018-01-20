@@ -79,6 +79,7 @@
 </template>
 
 <script>
+import axios from 'axios'
 import iataCodes from '../assets/iata'
 export default {
   name: 'Home',
@@ -93,7 +94,7 @@ export default {
         departureRange: '',
         minDays: 0,
         maxDays: 0,
-        email: '',
+        email: 'test@wizeline.com',
       },
       rules: {
         origin: [
@@ -103,7 +104,7 @@ export default {
           { required: true, message: 'Please input the destiny of the flight', trigger: 'change' },
         ],
         departureRange: [
-          { type: 'date', required: true, message: 'Please input the departure range', trigger: 'change' },
+          { required: true, message: 'Please input the departure range', trigger: 'change' },
         ],
         minDays: [
           { required: true, message: 'Please input the min days to stay in the destiny', trigger: 'blur' },
@@ -123,10 +124,43 @@ export default {
   methods: {
     submitForm(formName) {
       this.$refs[formName].validate((valid) => {
+        const origin = iataCodes.find((ic) => ic.value === this.form.origin)
+        const destiny = iataCodes.find((ic) => ic.value === this.form.destiny)
         if (valid) {
-          alert('submit!');
+          axios.post('http://127.0.0.1:1337/query', {
+            adults: this.form.adults,
+            email: this.form.email,
+            origin: origin && origin.code,
+            destination: destiny && destiny.code,
+            fromDate: this.form.departureRange[0],
+            toDate: this.form.departureRange[1],
+            minDays: this.form.minDays,
+            maxDays: this.form.maxDays,
+          })
+          .then(response => {
+            if (response.status === 200 && response.data && response.data.code) {
+              this.openModal(
+                `Please save your dashboard id: ${response.data.code}`,
+                'Dashboard ID',
+                { type: 'info', message: 'Dashboard created' }
+              )
+            } else {
+              this.openModal(
+                'Please try again later :saddod:',
+                'Something Bad Happen',
+                { type: 'error', message: ':(' }
+              )
+            }
+          })
+          .catch(error => {
+            this.openModal(
+              'Please try again later :saddod:',
+              'Something Bad Happen',
+              { type: 'error', message: ':(' }
+            )
+            console.log(error);
+          });
         } else {
-          console.log('error submit!!');
           return false;
         }
       });
@@ -150,6 +184,14 @@ export default {
         this.form.maxDays = newDay
       }
       return newDay
+    },
+    openModal(message, title, callBackOptions) {
+      this.$alert(message, title, {
+        confirmButtonText: 'OK',
+        callback: action => {
+          this.$message(callBackOptions);
+        }
+      });
     }
   },
   computed: {
