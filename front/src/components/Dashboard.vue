@@ -73,8 +73,6 @@
         </el-table-column>
       </el-table>
     </div>
-    
-    <graph v-if="jobs && jobs.length" :jobs="jobs"></graph>
   </div>
 </template>
 <script>
