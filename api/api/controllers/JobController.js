@@ -1,17 +1,16 @@
 const actions = {
   async update(req, res) {
-    const { id: jobId } = req.params;
-    const completed = req.body.completed === 'true';
+    const { id } = req.params;
 
     try {
-      const [{ owner }] = await Job.update({ id: jobId })
-        .set({ completed })
+      const [{ owner }] = await Job.update({ id })
+        .set(req.body)
         .fetch();
 
-      const current = await Query.findOne({ id: owner });
+      const query = await Query.findOne({ id: owner });
 
-      const [{ completedJobs, totalJobs }] = await Query.update({ id: current.id })
-        .set({ completedJobs: current.completedJobs + 1 })
+      const [{ completedJobs, totalJobs }] = await Query.update({ id: query.id })
+        .set({ completedJobs: query.completedJobs + 1 })
         .fetch();
 
       if (completedJobs === totalJobs) {
