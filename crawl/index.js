@@ -74,9 +74,9 @@ const testJobs = [
 ];
 
 
-app.get('/newJobs', function (req, res) {
-  // const jobs = testJobs.concat() || req.body || [];
-  const jobs = testJobs.concat();
+app.post('/newJobs', function (req, res) {
+  const jobs = req.body || [];
+  // const jobs = testJobs.concat();
   console.log('-- INCOMING NEW JOBS --', jobs.length);  
   res.sendStatus(200);
   processJobs(jobs);
