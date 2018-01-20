@@ -5,7 +5,7 @@ app.get('/awake', function (req, res) {
   res.send('Hello World!');
 });
 
-app.listen(3000, function () {
+app.listen(process.env.PORT, function () {
   init();
   console.log('Example app listening on port 3000!');
 });
