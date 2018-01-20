@@ -74,7 +74,7 @@
       </el-table>
     </div>
     
-    <graph></graph>
+    <graph v-if="jobs && jobs.length" :jobs="jobs"></graph>
   </div>
 </template>
 <script>
@@ -122,7 +122,6 @@ export default {
             this.toDate = format(query.toDate, 'MM/DD/YYYY')
             this.totalJobs = query.totalJobs
 
-            console.log(this.jobs);
             this.onQueryInfoUpdated(query)
           }
         })
