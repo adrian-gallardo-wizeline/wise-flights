@@ -1,5 +1,7 @@
 const uuid = require('uuid/v4');
 const moment = require('moment');
+const axios = require('axios');
+const workerUrl = require('../../config/urls').worker;
 
 const DATE_FORMAT = 'YYYY-MM-DD';
 
@@ -27,7 +29,6 @@ function* generateIntervals(payload) {
   }
 }
 
-
 const actions = {
 
   async create(req, res) {
@@ -43,23 +44,26 @@ const actions = {
 
       for (let interval of intervals) {
         const data = Object.assign(interval, { owner: id });
-        jobs.push(await Job.create(data));
+        jobs.push(await Job.create(data).fetch());
       }
 
+      // Wait for all jobs to be created
       await Promise.all(jobs);
 
+      // Update total jobs for the current query
       await Query.update({ id })
         .set({ totalJobs: jobs.length });
-
-      // notify scrapper
-
-      const emailConfig = Object.assign(payload, { createdAt, type: 'notify' });
 
       res.json({
         code: payload.code,
         totalJobs: jobs.length,
       });
 
+      // Notify worker of new jobs
+      axios.post(workerUrl, { jobs });
+
+      // Send notify email
+      const emailConfig = Object.assign(payload, { createdAt, type: 'notify' });
       await sails.helpers.sendEmail(emailConfig);
 
     } catch (err) {
