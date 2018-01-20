@@ -48,9 +48,12 @@ const actions = {
 
       await Promise.all(jobs);
 
-      res.json({});
-
       // Notify scrapper
+
+      return res.json({
+        code: payload.code,
+        totalJobs: jobs.length
+      });
 
     } catch (err) {
       return res.serverError(err);
