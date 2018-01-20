@@ -1,50 +1,112 @@
 <template>
-  <div class="wrapper">
-    <el-card class="box-card">
-      <div slot="header" class="clearfix">
-        <span>Summary</span>
-      </div>
-      <ul>
-        <li>
-          <span class="text item">Created at:</span>
-          <span class="text item">{{createdAt}}</span>
-        </li>
-        <li>
-          <span class="text item">Origin:</span>
-          <span class="text item">{{origin}}</span>
-        </li>
-        <li>
-          <span class="text item">Destiny:</span>
-          <span class="text item">{{destination}}</span>
-        </li>
-        <li>
-          <span class="text item">Departure Range:</span>
-          <span class="text item">{{fromDate}} - {{toDate}}</span>
-        </li>
-        <li>
-          <span class="text item">Min Days:</span>
-          <span class="text item">{{minDays}}</span>
-        </li>
-        <li>
-          <span class="text item">Max Days:</span>
-          <span class="text item">{{maxDays}}</span>
-        </li>
-        <li>
-          <span class="text item">Adults:</span>
-          <span class="text item">{{adults}}</span>
-        </li>
-        <li>
-          <span class="text item">Email:</span>
-          <span class="text item">{{email}}</span>
-        </li>
-      </ul>
-    </el-card>
+  <div class="main">
+    <div class="wrapper">
+      <el-card class="box-card card">
+        <div slot="header" class="clearfix">
+          <span>Summary</span>
+        </div>
+        <el-row class="item">
+          <strong class="text">Created at:</strong>
+          <span class="text">{{createdAt}}</span>
+        </el-row>
+        <el-row class="item">
+          <el-col :span="12">        
+            <strong class="text">Origin:</strong>
+            <span class="text">{{origin}}</span>
+          </el-col>     
+          <el-col :span="12">                 
+            <strong class="text">Destiny:</strong>
+            <span class="text">{{destination}}</span>
+          </el-col>        
+        </el-row>
+        <el-row class="item">
+          <el-col :span="12">                
+            <strong class="text">From:</strong>
+            <span class="text">{{fromDate}}</span>
+          </el-col>        
+          <el-col :span="12">
+            <strong class="text">To:</strong>
+            <span class="text">{{toDate}}</span>   
+          </el-col>                
+        </el-row>
+        <el-row class="item">
+          <el-col :span="12">
+            <strong class="text">Min Days:</strong>
+            <span class="text">{{minDays}}</span>
+          </el-col>
+          <el-col :span="12">
+            <strong class="text">Max Days:</strong>
+            <span class="text">{{maxDays}}</span>
+          </el-col>  
+        </el-row>
+        <el-row class="item">
+          <el-col :span="12">
+            <strong class="text">Adults:</strong>
+            <span class="text">{{adults}}</span>
+          </el-col>
+          <el-col :span="12">
+            <strong class="text">Email:</strong>
+            <span class="text">{{email}}</span>
+          </el-col>  
+        </el-row>
+        <el-row class="item center">
+          <strong class="text">Tasks Completed:</strong>
+          <span class="text tasksCompleted">&nbsp;{{completedJobs}}/{{totalJobs}}</span>
+        </el-row>
+        <el-row class="item">
+          <el-progress :text-inside="true" :stroke-width="18" :percentage="jobsPercentage" status="success"></el-progress>
+        </el-row>
+      </el-card>
+    </div>
+    <el-table
+      :data="completedJobs"
+      stripe
+      height="350"
+      style="width: 100%">
+      <el-table-column
+        prop="provider"
+        label="Provider"
+        sortable
+        width="180" />
+      <el-table-column
+        prop="startDate"
+        label="From"
+        sortable
+        width="180" />
+      <el-table-column
+        prop="endDate"
+        label="To"
+        sortable
+        width="180" />
+      <el-table-column
+        prop="nights"
+        label="Nights"
+        sortable
+        width="180" />
+      <el-table-column
+        prop="price"
+        label="Price"
+        sortable
+        width="180" />
+      <el-table-column
+        prop="url"
+        label="Actions"
+        sortable
+        width="180">
+        <template slot-scope="scope">
+          <el-button
+            size="mini"
+            @click="seeResult(scope.$index)">Go To Results</el-button>
+        </template>
+      </el-table-column>
+    </el-table>
+    <graph></graph>
   </div>
 </template>
 <script>
 import axios from 'axios'
-import { format } from 'date-fns'
-
+import Graph from './Graph'
+import { format, differenceInDays } from 'date-fns'
 export default {
   name: 'Dashboard',
   data() {
@@ -64,43 +126,76 @@ export default {
     }
   },
   methods: {
+    updateQueryInfo(){
+      axios.get(`http://127.0.0.1:1337/query?code=${this.$route.params.id}`)
+        .then(response => {
+          console.log(response)
+          if (response.status === 200) {
+            const query = response.data[0]
+            this.adults = query.adults
+            this.completedJobs = query.completedJobs
+            this.createdAt = format(new Date(query.createdAt), 'MM/DD/YYYY')
+            this.destination = query.destination
+            this.email = query.email
+            this.fromDate = format(query.fromDate, 'MM/DD/YYYY')
+            this.jobs = query.jobs
+            this.maxDays = query.maxDays
+            this.minDays = query.minDays
+            this.origin = query.origin
+            this.toDate = format(query.toDate, 'MM/DD/YYYY')
+            this.totalJobs = query.totalJobs
+          }
+          this.onQueryInfoUpdated(query)
+        })
+        .catch(error => {
+          console.log(error);
+        });
+    },
+    onQueryInfoUpdated(query) {
+      if (query.completedJobs !== query.totalJobs) {
+        setTimeout(() => {
+          this.updateQueryInfo()
+        }, 1000);
+      }
+    },
+    seeResult(index) {
+      window.open(this.jobs[index].url, "_blank");
+    }
   },
   computed: {
+    jobsPercentage() {
+      return this.completedJobs * 100 / this.totalJobs
+    },
+    completedJobs() {
+      return this.jobs.filter(job => job.completed)
+    }
+  },
+  components: {
+    Graph,
   },
   mounted() {
-    axios.get(`http://127.0.0.1:1337/query?code=${this.$route.params.id}`)
-      .then(response => {
-        console.log(response)
-        if (response.status === 200) {
-          const userData = response.data[0]
-          this.adults = userData.adults
-          this.completedJobs = userData.completedJobs
-          this.createdAt = format(new Date(userData.createdAt), 'MM/DD/YYYY')
-          this.destination = userData.destination
-          this.email = userData.email
-          this.fromDate = format(userData.fromDate, 'MM/DD/YYYY')
-          this.jobs = userData.jobs
-          this.maxDays = userData.maxDays
-          this.minDays = userData.minDays
-          this.origin = userData.origin
-          this.toDate = format(userData.toDate, 'MM/DD/YYYY')
-          this.totalJobs = userData.totalJobs
-        }
-      })
-      .catch(error => {
-        console.log(error);
-      });
+    this.updateQueryInfo();
   }
 }
 </script>
 
 <style scoped>
+.card {
+  margin: 50px auto;
+  max-width: 480px;
+  width: 100% !important;
+}
 .text {
-    font-size: 14px;
-  }
+  font-size: 14px;
+}
 
 .item {
   margin-bottom: 18px;
+}
+
+.main {
+  max-width: 1080px;
+  margin: 0 auto;
 }
 
 .clearfix:before,
@@ -115,4 +210,15 @@ export default {
 .box-card {
   width: 480px;
 }
+
+.center {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.tasksCompleted {
+  font-size: 24px;
+}
+
 </style>
