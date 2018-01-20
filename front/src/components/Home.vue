@@ -142,7 +142,10 @@ export default {
               this.openModal(
                 `Please save your dashboard id: ${response.data.code}`,
                 'Dashboard ID',
-                { type: 'info', message: 'Dashboard created' }
+                { type: 'info', message: 'Dashboard created' },
+                () => {
+                  this.$router.push({ path: `/dashboard/${response.data.code}` })
+                }
               )
             } else {
               this.openModal(
@@ -185,18 +188,18 @@ export default {
       }
       return newDay
     },
-    openModal(message, title, callBackOptions) {
+    openModal(message, title, callBackOptions, callBackAction) {
       this.$alert(message, title, {
         confirmButtonText: 'OK',
         callback: action => {
-          this.$message(callBackOptions);
+          this.$message(callBackOptions)
+          callBackAction && callBackAction()
         }
       });
     }
   },
   computed: {
     minMaxDays() {
-      console.log(this.form.minDays)
       return this.form.minDays + 1 
     }
   },
