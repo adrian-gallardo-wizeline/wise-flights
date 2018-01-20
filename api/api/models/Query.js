@@ -13,6 +13,11 @@ module.exports = {
     email: { type: 'string' },
     origin: { type: 'string' },
     destination: { type: 'string' },
+    startDateFrom: { type: 'string' },
+    startDateTo: { type: 'string' },
+    minimumDays: { type: 'number' },
+    maximumDays: { type: 'number' },
+
     createdAt: { type: 'number', autoCreatedAt: true },
 
     totalJobs: { type: 'number' },
