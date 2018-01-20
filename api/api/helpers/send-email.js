@@ -3,7 +3,7 @@ const apiKey = 'key-e3a58856752ceac3308ed06dd61f6984';
 const domain = 'sandbox61ee261480244f228c2e29b9a4c15d19.mailgun.org';
 const mailgun = require('mailgun-js')({ apiKey, domain });
 
-const DASHBOARD_ROOT = `http://local.wiseflights.com:8080/dashboard/`;
+const dashboardUrl = require('../../config/urls').dashboard;
 
 module.exports = {
 
@@ -21,7 +21,7 @@ module.exports = {
     const payload = inputs.payload;
     const { email, code, origin, destination, createdAt, type } = payload;
 
-    const url = DASHBOARD_ROOT + code;
+    const url = dashboardUrl + code;
     const dateSent = moment(createdAt).format('dddd, MMMM Do YYYY');
 
     const messages = {
