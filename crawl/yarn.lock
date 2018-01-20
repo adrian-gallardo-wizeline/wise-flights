@@ -58,6 +58,10 @@ debug@^3.1.0:
   dependencies:
     ms "2.0.0"
 
+dotenv@^4.0.0:
+  version "4.0.0"
+  resolved "https://registry.npmjs.org/dotenv/-/dotenv-4.0.0.tgz#864ef1379aced55ce6f95debecdce179f7a0cd1d"
+
 es6-promise@^4.0.3:
   version "4.2.2"
   resolved "https://registry.npmjs.org/es6-promise/-/es6-promise-4.2.2.tgz#f722d7769af88bd33bc13ec6605e1f92966b82d9"
