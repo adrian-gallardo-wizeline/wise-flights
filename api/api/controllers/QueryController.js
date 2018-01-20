@@ -36,7 +36,7 @@ const actions = {
     payload.code = uuid();
 
     try {
-      const { id } = await Query.create(payload).fetch();
+      const { id, createdAt } = await Query.create(payload).fetch();
       const intervals = generateIntervals(payload);
 
       const jobs = [];
@@ -53,10 +53,14 @@ const actions = {
 
       // notify scrapper
 
-      return res.json({
+      const emailConfig = Object.assign(payload, { createdAt, type: 'notify' });
+
+      res.json({
         code: payload.code,
-        totalJobs: jobs.length
+        totalJobs: jobs.length,
       });
+
+      await sails.helpers.sendEmail(emailConfig);
 
     } catch (err) {
       return res.serverError(err);

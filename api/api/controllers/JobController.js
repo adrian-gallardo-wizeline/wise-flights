@@ -14,10 +14,11 @@ const actions = {
         .fetch();
 
       if (completedJobs === totalJobs) {
-        // mail notification & realtime sync
+        const emailConfig = Object.assign(query, { type: 'completed' });
+        await sails.helpers.sendEmail(emailConfig);
       }
 
-      return res.ok();
+      return res.sendStatus(200);
 
     } catch (err) {
       res.serverError(err);
