@@ -36,19 +36,22 @@ const actions = {
     payload.code = uuid();
 
     try {
-      const { id: owner } = await Query.create(payload).fetch();
+      const { id } = await Query.create(payload).fetch();
       const intervals = generateIntervals(payload);
 
       const jobs = [];
 
       for (let interval of intervals) {
-        const data = Object.assign(interval, { owner });
+        const data = Object.assign(interval, { owner: id });
         jobs.push(await Job.create(data));
       }
 
       await Promise.all(jobs);
 
-      // Notify scrapper
+      await Query.update({ id })
+        .set({ totalJobs: jobs.length });
+
+      // notify scrapper
 
       return res.json({
         code: payload.code,
