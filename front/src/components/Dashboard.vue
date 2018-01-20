@@ -52,54 +52,28 @@
         <el-row class="item center">
           <strong class="text">Tasks Completed:</strong>
           <span class="text tasksCompleted">&nbsp;{{completedJobs}}/{{totalJobs}}</span>
+          <i style="margin-left: 10px;" v-if="completedJobs < totalJobs" class="el-icon-loading"></i>
         </el-row>
         <el-row class="item">
           <el-progress :text-inside="true" :stroke-width="18" :percentage="jobsPercentage" status="success"></el-progress>
         </el-row>
       </el-card>
     </div>
-    <el-table
-      :data="completedJobs"
-      stripe
-      height="350"
-      style="width: 100%">
-      <el-table-column
-        prop="provider"
-        label="Provider"
-        sortable
-        width="180" />
-      <el-table-column
-        prop="startDate"
-        label="From"
-        sortable
-        width="180" />
-      <el-table-column
-        prop="endDate"
-        label="To"
-        sortable
-        width="180" />
-      <el-table-column
-        prop="nights"
-        label="Nights"
-        sortable
-        width="180" />
-      <el-table-column
-        prop="price"
-        label="Price"
-        sortable
-        width="180" />
-      <el-table-column
-        prop="url"
-        label="Actions"
-        sortable
-        width="180">
-        <template slot-scope="scope">
-          <el-button
-            size="mini"
-            @click="seeResult(scope.$index)">Go To Results</el-button>
-        </template>
-      </el-table-column>
-    </el-table>
+    <div id="results-table">
+      <el-table :data="jobs" stripe height="350" style="width: 100%">
+        <el-table-column prop="provider" label="Provider" sortable width="180" />
+        <el-table-column prop="startDate" label="From" sortable width="180" />
+        <el-table-column prop="endDate" label="To" sortable width="180" />
+        <el-table-column prop="nights" label="Nights" sortable width="180" />
+        <el-table-column prop="price" label="Price" sortable width="180" />
+        <el-table-column prop="url" label="Actions" sortable width="180">
+          <template slot-scope="scope">
+            <el-button size="mini" @click="seeResult(scope.$index)">Go To Results</el-button>
+          </template>
+        </el-table-column>
+      </el-table>
+    </div>
+    
     <graph></graph>
   </div>
 </template>
@@ -127,6 +101,7 @@ export default {
   },
   methods: {
     updateQueryInfo(){
+
       axios.get(`http://127.0.0.1:1337/query?code=${this.$route.params.id}`)
         .then(response => {
           console.log(response)
@@ -139,13 +114,17 @@ export default {
             this.email = query.email
             this.fromDate = format(query.fromDate, 'MM/DD/YYYY')
             this.jobs = query.jobs
+                             .filter(job => job.completed)
+                             .map(job => ({ ...job, nights: differenceInDays(job.endDate, job.startDate) }))
             this.maxDays = query.maxDays
             this.minDays = query.minDays
             this.origin = query.origin
             this.toDate = format(query.toDate, 'MM/DD/YYYY')
             this.totalJobs = query.totalJobs
+
+            console.log(this.jobs);
+            this.onQueryInfoUpdated(query)
           }
-          this.onQueryInfoUpdated(query)
         })
         .catch(error => {
           console.log(error);
@@ -156,7 +135,7 @@ export default {
         setTimeout(() => {
           console.log('pooling...');
           this.updateQueryInfo();
-        }, 1000);
+        }, 5000);
       }
     },
     seeResult(index) {
@@ -168,7 +147,9 @@ export default {
       return this.completedJobs * 100 / this.totalJobs
     },
     completedJobs() {
-      return this.jobs.filter(job => job.completed)
+      return this.jobs.filter(job => {
+        return job.completed;
+      });
     }
   },
   components: {
