@@ -5,8 +5,7 @@
   </div>
 </template>
 <script>
-var data = [],
-    svg,
+var svg,
     defs,
     gBrush,
     brush,
@@ -22,287 +21,296 @@ var data = [],
 /////////////////////////////////////////////////////////////
 ///////////////// Set-up SVG and wrappers ///////////////////
 /////////////////////////////////////////////////////////////
-function init() {
-    data.sort(function(a,b) { return b.value - a.value; });
-    //Added only for the mouse wheel
-    var zoomer = d3.behavior.zoom()
-        .on("zoom", null);
+export default {
+  name: 'Graph',
+  props: {
+    jobs: {
+      type: Array,
+      required: true,
+    },
+  },
+  data() {
+    return {
 
-    var main_margin = {top: 10, right: 10, bottom: 30, left: 100},
-        main_width = 500 - main_margin.left - main_margin.right,
-        main_height = 400 - main_margin.top - main_margin.bottom;
+    }
+  },
+  methods: {
+    init() {
+      if (!this.jobs || !this.jobs.length) return
+      this.jobs.forEach((job, index) => { job.key = index })
+      this.jobs.sort((a, b) => b.price - a.price)
+      //Added only for the mouse wheel
+      var zoomer = d3.behavior.zoom()
+          .on("zoom", null);
 
-    var mini_margin = {top: 10, right: 10, bottom: 30, left: 10},
-        mini_height = 400 - mini_margin.top - mini_margin.bottom;
-    mini_width = 100 - mini_margin.left - mini_margin.right;
+      var main_margin = {top: 10, right: 10, bottom: 30, left: 100},
+          main_width = 500 - main_margin.left - main_margin.right,
+          main_height = 400 - main_margin.top - main_margin.bottom;
 
-    svg = d3.select("#chart").append("svg")
-        .attr("class", "svgWrapper")
-        .attr("width", main_width + main_margin.left + main_margin.right + mini_width + mini_margin.left + mini_margin.right)
-        .attr("height", main_height + main_margin.top + main_margin.bottom)
-        .call(zoomer)
-        .on("wheel.zoom", scroll)
-        //.on("mousewheel.zoom", scroll)
-        //.on("DOMMouseScroll.zoom", scroll)
-        //.on("MozMousePixelScroll.zoom", scroll)
-        //Is this needed?
-        .on("mousedown.zoom", null)
-        .on("touchstart.zoom", null)
-        .on("touchmove.zoom", null)
-        .on("touchend.zoom", null);
+      var mini_margin = {top: 10, right: 10, bottom: 30, left: 10},
+          mini_height = 400 - mini_margin.top - mini_margin.bottom;
+      mini_width = 100 - mini_margin.left - mini_margin.right;
 
-    var mainGroup = svg.append("g")
-            .attr("class","mainGroupWrapper")
-            .attr("transform","translate(" + main_margin.left + "," + main_margin.top + ")")
-            .append("g") //another one for the clip path - due to not wanting to clip the labels
-            .attr("clip-path", "url(#clip)")
-            .style("clip-path", "url(#clip)")
-            .attr("class","mainGroup");
+      svg = d3.select("#chart").append("svg")
+          .attr("class", "svgWrapper")
+          .attr("width", main_width + main_margin.left + main_margin.right + mini_width + mini_margin.left + mini_margin.right)
+          .attr("height", main_height + main_margin.top + main_margin.bottom)
+          .call(zoomer)
+          .on("wheel.zoom", this.scroll)
+          .on("mousedown.zoom", null)
+          .on("touchstart.zoom", null)
+          .on("touchmove.zoom", null)
+          .on("touchend.zoom", null);
 
-    var miniGroup = svg.append("g")
-            .attr("class","miniGroup")
-            .attr("transform","translate(" + (main_margin.left + main_width + main_margin.right + mini_margin.left) + "," + mini_margin.top + ")");
+      var mainGroup = svg.append("g")
+              .attr("class","mainGroupWrapper")
+              .attr("transform","translate(" + main_margin.left + "," + main_margin.top + ")")
+              .append("g")
+              .attr("clip-path", "url(#clip)")
+              .style("clip-path", "url(#clip)")
+              .attr("class","mainGroup");
 
-    var brushGroup = svg.append("g")
-            .attr("class","brushGroup")
-            .attr("transform","translate(" + (main_margin.left + main_width + main_margin.right + mini_margin.left) + "," + mini_margin.top + ")");
+      var miniGroup = svg.append("g")
+              .attr("class","miniGroup")
+              .attr("transform","translate(" + (main_margin.left + main_width + main_margin.right + mini_margin.left) + "," + mini_margin.top + ")");
 
-    /////////////////////////////////////////////////////////////
-    ////////////////////// Initiate scales //////////////////////
-    /////////////////////////////////////////////////////////////
+      var brushGroup = svg.append("g")
+              .attr("class","brushGroup")
+              .attr("transform","translate(" + (main_margin.left + main_width + main_margin.right + mini_margin.left) + "," + mini_margin.top + ")");
 
-    main_xScale = d3.scale.linear().range([0, main_width]);
-    mini_xScale = d3.scale.linear().range([0, mini_width]);
+      /////////////////////////////////////////////////////////////
+      ////////////////////// Initiate scales //////////////////////
+      /////////////////////////////////////////////////////////////
 
-    main_yScale = d3.scale.ordinal().rangeBands([0, main_height], 0.4, 0);
-    mini_yScale = d3.scale.ordinal().rangeBands([0, mini_height], 0.4, 0);
+      main_xScale = d3.scale.linear().range([0, main_width]);
+      mini_xScale = d3.scale.linear().range([0, mini_width]);
 
-    //Based on the idea from: http://stackoverflow.com/questions/21485339/d3-brushing-on-grouped-bar-chart
-    main_yZoom = d3.scale.linear()
-        .range([0, main_height])
-        .domain([0, main_height]);
+      main_yScale = d3.scale.ordinal().rangeBands([0, main_height], 0.4, 0);
+      mini_yScale = d3.scale.ordinal().rangeBands([0, mini_height], 0.4, 0);
 
-    //Create x axis object
-    main_xAxis = d3.svg.axis()
-      .scale(main_xScale)
-      .orient("bottom")
-      .ticks(4)
-      //.tickSize(0)
-      .outerTickSize(0);
+      main_yZoom = d3.scale.linear()
+          .range([0, main_height])
+          .domain([0, main_height]);
 
-    //Add group for the x axis
-    d3.select(".mainGroupWrapper")
-        .append("g")
-        .attr("class", "x axis")
-        .attr("transform", "translate(" + 0 + "," + (main_height + 5) + ")");
+      //Create x axis object
+      main_xAxis = d3.svg.axis()
+        .scale(main_xScale)
+        .orient("bottom")
+        .ticks(4)
+        .outerTickSize(0);
 
-    //Create y axis object
-    main_yAxis = d3.svg.axis()
-      .scale(main_yScale)
-      .orient("left")
-      .tickSize(0)
-      .outerTickSize(0);
+      //Add group for the x axis
+      d3.select(".mainGroupWrapper")
+          .append("g")
+          .attr("class", "x axis")
+          .attr("transform", "translate(" + 0 + "," + (main_height + 5) + ")");
 
-    //Add group for the y axis
-    mainGroup.append("g")
-        .attr("class", "y axis")
-        .attr("transform", "translate(-5,0)");
- 
-    /////////////////////////////////////////////////////////////
-    /////////////////////// Update scales ///////////////////////
-    /////////////////////////////////////////////////////////////
+      //Create y axis object
+      main_yAxis = d3.svg.axis()
+        .scale(main_yScale)
+        .orient("left")
+        .tickSize(0)
+        .outerTickSize(0);
 
-    //Update the scales
-    main_xScale.domain([0, d3.max(data, function(d) { return d.value; })]);
-    mini_xScale.domain([0, d3.max(data, function(d) { return d.value; })]);
-    main_yScale.domain(data.map(function(d) { return d.country; }));
-    mini_yScale.domain(data.map(function(d) { return d.country; }));
-    
-    //Create the visual part of the y axis
-    d3.select(".mainGroup").select(".y.axis").call(main_yAxis);
+      //Add group for the y axis
+      mainGroup.append("g")
+          .attr("class", "y axis")
+          .attr("transform", "translate(-5,0)");
+  
+      /////////////////////////////////////////////////////////////
+      /////////////////////// Update scales ///////////////////////
+      /////////////////////////////////////////////////////////////
 
-    /////////////////////////////////////////////////////////////
-    ///////////////////// Label axis scales /////////////////////
-    /////////////////////////////////////////////////////////////
+      //Update the scales
+      main_xScale.domain([0, d3.max(this.jobs, function(d) { return d.price; })]);
+      mini_xScale.domain([0, d3.max(this.jobs, function(d) { return d.price; })]);
+      main_yScale.domain(this.jobs.map(function(d) { return `${d.startDate}-${d.endDate}`; }));
+      mini_yScale.domain(this.jobs.map(function(d) { return `${d.startDate}-${d.endDate}`; }));
+      
+      //Create the visual part of the y axis
+      d3.select(".mainGroup").select(".y.axis").call(main_yAxis);
 
-    textScale = d3.scale.linear()
-      .domain([15,50])
-      .range([12,6])
-      .clamp(true);
-    
-    /////////////////////////////////////////////////////////////
-    ///////////////////////// Create brush //////////////////////
-    /////////////////////////////////////////////////////////////
+      /////////////////////////////////////////////////////////////
+      ///////////////////// Label axis scales /////////////////////
+      /////////////////////////////////////////////////////////////
 
-    //What should the first extent of the brush become - a bit arbitrary this
-    var brushExtent = Math.max( 1, Math.min( 20, Math.round(data.length*0.2) ) );
+      textScale = d3.scale.linear()
+        .domain([15,50])
+        .range([12,6])
+        .clamp(true);
+      
+      /////////////////////////////////////////////////////////////
+      ///////////////////////// Create brush //////////////////////
+      /////////////////////////////////////////////////////////////
 
-    brush = d3.svg.brush()
-        .y(mini_yScale)
-        .extent([mini_yScale(data[0].country), mini_yScale(data[brushExtent].country)])
-        .on("brush", brushmove)
+      //What should the first extent of the brush become - a bit arbitrary this
+      var brushExtent = Math.max( 1, Math.min( 20, Math.round(this.jobs.length*0.2) ) );
 
-    //Set up the visual part of the brush
-    gBrush = d3.select(".brushGroup").append("g")
-      .attr("class", "brush")
-      .call(brush);
-    
-    gBrush.selectAll(".resize")
-      .append("line")
-      .attr("x2", mini_width);
+      brush = d3.svg.brush()
+          .y(mini_yScale)
+          .extent([mini_yScale(`${this.jobs[0].startDate}-${this.jobs[0].endDate}`), mini_yScale(`${this.jobs[brushExtent].startDate}-${this.jobs[brushExtent].endDate}`)])
+          .on("brush", this.brushmove)
 
-    gBrush.selectAll(".resize")
-      .append("path")
-      .attr("d", d3.svg.symbol().type("triangle-up").size(20))
-      .attr("transform", function(d,i) { 
-        return i ? "translate(" + (mini_width/2) + "," + 4 + ") rotate(180)" : "translate(" + (mini_width/2) + "," + -4 + ") rotate(0)"; 
-      });
+      //Set up the visual part of the brush
+      gBrush = d3.select(".brushGroup").append("g")
+        .attr("class", "brush")
+        .call(brush);
+      
+      gBrush.selectAll(".resize")
+        .append("line")
+        .attr("x2", mini_width);
 
-    gBrush.selectAll("rect")
-      .attr("width", mini_width);
+      gBrush.selectAll(".resize")
+        .append("path")
+        .attr("d", d3.svg.symbol().type("triangle-up").size(20))
+        .attr("transform", function(d,i) { 
+          return i ? "translate(" + (mini_width/2) + "," + 4 + ") rotate(180)" : "translate(" + (mini_width/2) + "," + -4 + ") rotate(0)"; 
+        });
 
-    //On a click recenter the brush window
-    gBrush.select(".background")
-      .on("mousedown.brush", brushcenter)
-      .on("touchstart.brush", brushcenter);
+      gBrush.selectAll("rect")
+        .attr("width", mini_width);
 
-    ///////////////////////////////////////////////////////////////////////////
-    /////////////////// Create a rainbow gradient - for fun ///////////////////
-    ///////////////////////////////////////////////////////////////////////////
+      //On a click recenter the brush window
+      gBrush.select(".background")
+        .on("mousedown.brush", this.brushcenter)
+        .on("touchstart.brush", this.brushcenter);
 
-    defs = svg.append("defs")
+      ///////////////////////////////////////////////////////////////////////////
+      /////////////////// Create a rainbow gradient - for fun ///////////////////
+      ///////////////////////////////////////////////////////////////////////////
 
-    //Create two separate gradients for the main and mini bar - just because it looks fun
-    createGradient("gradient-rainbow-main", "60%");
-    createGradient("gradient-rainbow-mini", "13%");
+      defs = svg.append("defs")
 
-    //Add the clip path for the main bar chart
-    defs.append("clipPath")
-      .attr("id", "clip")
-      .append("rect")
-    	.attr("x", -main_margin.left)
-      .attr("width", main_width + main_margin.left)
-      .attr("height", main_height);
+      //Create two separate gradients for the main and mini bar - just because it looks fun
+      this.createGradient("gradient-rainbow-main", "60%");
+      this.createGradient("gradient-rainbow-mini", "13%");
 
-    /////////////////////////////////////////////////////////////
-    /////////////// Set-up the mini bar chart ///////////////////
-    /////////////////////////////////////////////////////////////
+      //Add the clip path for the main bar chart
+      defs.append("clipPath")
+        .attr("id", "clip")
+        .append("rect")
+        .attr("x", -main_margin.left)
+        .attr("width", main_width + main_margin.left)
+        .attr("height", main_height);
 
-    //The mini brushable bar
-    //DATA JOIN
-    var mini_bar = d3.select(".miniGroup").selectAll(".bar")
-      .data(data, function(d) { return d.key; });
+      /////////////////////////////////////////////////////////////
+      /////////////// Set-up the mini bar chart ///////////////////
+      /////////////////////////////////////////////////////////////
 
-    //UDPATE
-    mini_bar
-      .attr("width", function(d) { return mini_xScale(d.value); })
-      .attr("y", function(d,i) { return mini_yScale(d.country); })
-      .attr("height", mini_yScale.rangeBand());
+      //The mini brushable bar
+      //DATA JOIN
+      var mini_bar = d3.select(".miniGroup").selectAll(".bar")
+        .data(this.jobs, function(d) { return d.key; });
 
-    //ENTER
-    mini_bar.enter().append("rect")
-      .attr("class", "bar")
-      .attr("x", 0)
-      .attr("width", function(d) { return mini_xScale(d.value); })
-      .attr("y", function(d,i) { return mini_yScale(d.country); })
-      .attr("height", mini_yScale.rangeBand())
-      .style("fill", "url(#gradient-rainbow-mini)");
+      //UDPATE
+      mini_bar
+        .attr("width", function(d) { return mini_xScale(d.price); })
+        .attr("y", function(d,i) { return mini_yScale(`${d.startDate}-${d.endDate}`); })
+        .attr("height", mini_yScale.rangeBand());
 
-    //EXIT
-    mini_bar.exit()
-      .remove();
+      //ENTER
+      mini_bar.enter().append("rect")
+        .attr("class", "bar")
+        .attr("x", 0)
+        .attr("width", function(d) { return mini_xScale(d.price); })
+        .attr("y", function(d,i) { return mini_yScale(`${d.startDate}-${d.endDate}`); })
+        .attr("height", mini_yScale.rangeBand())
+        .style("fill", "url(#gradient-rainbow-mini)");
 
-    //Start the brush
-    gBrush.call(brush.event);
+      //EXIT
+      mini_bar.exit()
+        .remove();
 
-  }//init
+      //Start the brush
+      gBrush.call(brush.event);
 
+    },//init
   //Function runs on a brush move - to update the big bar chart
-  function update() {
+    update() {
 
-    /////////////////////////////////////////////////////////////
-    ////////// Update the bars of the main bar chart ////////////
-    /////////////////////////////////////////////////////////////
+      /////////////////////////////////////////////////////////////
+      ////////// Update the bars of the main bar chart ////////////
+      /////////////////////////////////////////////////////////////
 
-    //DATA JOIN
-    var bar = d3.select(".mainGroup").selectAll(".bar")
-        .data(data, function(d) { return d.key; });
+      //DATA JOIN
+      var bar = d3.select(".mainGroup").selectAll(".bar")
+          .data(this.jobs, function(d) { return d.key; });
 
-    //UPDATE
-    bar
-      .attr("y", function(d,i) { return main_yScale(d.country); })
-      .attr("height", main_yScale.rangeBand())
-      .attr("x", 0)
-      .transition().duration(50)
-      .attr("width", function(d) { return main_xScale(d.value); });
+      //UPDATE
+      bar
+        .attr("y", function(d,i) { return main_yScale(`${d.startDate}-${d.endDate}`); })
+        .attr("height", main_yScale.rangeBand())
+        .attr("x", 0)
+        .transition().duration(50)
+        .attr("width", function(d) { return main_xScale(d.price); });
 
-    //ENTER
-    bar.enter().append("rect")
-      .attr("class", "bar")
-      .style("fill", "url(#gradient-rainbow-main)")
-      .attr("y", function(d,i) { return main_yScale(d.country); })
-      .attr("height", main_yScale.rangeBand())
-      .attr("x", 0)
-      .transition().duration(50)
-      .attr("width", function(d) { return main_xScale(d.value); });
+      //ENTER
+      bar.enter().append("rect")
+        .attr("class", "bar")
+        .style("fill", "url(#gradient-rainbow-main)")
+        .attr("y", function(d,i) { return main_yScale(`${d.startDate}-${d.endDate}`); })
+        .attr("height", main_yScale.rangeBand())
+        .attr("x", 0)
+        .transition().duration(50)
+        .attr("width", function(d) { return main_xScale(d.price); });
 
-    //EXIT
-    bar.exit()
-      .remove();
+      //EXIT
+      bar.exit()
+        .remove();
 
-  }//update
+    },//update
 
   /////////////////////////////////////////////////////////////
   ////////////////////// Brush functions //////////////////////
   /////////////////////////////////////////////////////////////
 
   //First function that runs on a brush move
-  function brushmove() {
+    brushmove() {
 
-    var extent = brush.extent();
+      var extent = brush.extent();
 
-    //Which bars are still "selected"
-    var selected = mini_yScale.domain()
-      .filter(function(d) { return (extent[0] - mini_yScale.rangeBand() + 1e-2 <= mini_yScale(d)) && (mini_yScale(d) <= extent[1] - 1e-2); }); 
-    //Update the colors of the mini chart - Make everything outside the brush grey
-    d3.select(".miniGroup").selectAll(".bar")
-      .style("fill", function(d, i) { return selected.indexOf(d.country) > -1 ? "url(#gradient-rainbow-mini)" : "#e0e0e0"; });
+      //Which bars are still "selected"
+      var selected = mini_yScale.domain()
+        .filter(function(d) { return (extent[0] - mini_yScale.rangeBand() + 1e-2 <= mini_yScale(d)) && (mini_yScale(d) <= extent[1] - 1e-2); }); 
+      //Update the colors of the mini chart - Make everything outside the brush grey
+      d3.select(".miniGroup").selectAll(".bar")
+        .style("fill", function(d, i) { return selected.indexOf(`${d.startDate}-${d.endDate}`) > -1 ? "url(#gradient-rainbow-mini)" : "#e0e0e0"; });
 
-    //Update the label size
-    d3.selectAll(".y.axis text")
-      .style("font-size", textScale(selected.length));
-    
-    /////////////////////////////////////////////////////////////
-    ///////////////////// Update the axes ///////////////////////
-    /////////////////////////////////////////////////////////////
+      //Update the label size
+      d3.selectAll(".y.axis text")
+        .style("font-size", textScale(selected.length));
+      
+      /////////////////////////////////////////////////////////////
+      ///////////////////// Update the axes ///////////////////////
+      /////////////////////////////////////////////////////////////
 
-    //Reset the part that is visible on the big chart
-    var originalRange = main_yZoom.range();
-    main_yZoom.domain( extent );
+      //Reset the part that is visible on the big chart
+      var originalRange = main_yZoom.range();
+      main_yZoom.domain( extent );
 
-    //Update the domain of the x & y scale of the big bar chart
-    main_yScale.domain(data.map(function(d) { return d.country; }));
-    main_yScale.rangeBands( [ main_yZoom(originalRange[0]), main_yZoom(originalRange[1]) ], 0.4, 0);
+      //Update the domain of the x & y scale of the big bar chart
+      main_yScale.domain(this.jobs.map(function(d) { return `${d.startDate}-${d.endDate}`; }));
+      main_yScale.rangeBands( [ main_yZoom(originalRange[0]), main_yZoom(originalRange[1]) ], 0.4, 0);
 
-    //Update the y axis of the big chart
-    d3.select(".mainGroup")
-      .select(".y.axis")
-      .call(main_yAxis);
+      //Update the y axis of the big chart
+      d3.select(".mainGroup")
+        .select(".y.axis")
+        .call(main_yAxis);
 
-    //Find the new max of the bars to update the x scale
-    var newMaxXScale = d3.max(data, function(d) { return selected.indexOf(d.country) > -1 ? d.value : 0; });
-    main_xScale.domain([0, newMaxXScale]);
+      //Find the new max of the bars to update the x scale
+      var newMaxXScale = d3.max(this.jobs, function(d) { return selected.indexOf(`${d.startDate}-${d.endDate}`) > -1 ? d.price : 0; });
+      main_xScale.domain([0, newMaxXScale]);
 
-    //Update the x axis of the big chart
-    d3.select(".mainGroupWrapper")
-      .select(".x.axis")
-      .transition().duration(50)
-      .call(main_xAxis);
+      //Update the x axis of the big chart
+      d3.select(".mainGroupWrapper")
+        .select(".x.axis")
+        .transition().duration(50)
+        .call(main_xAxis);
 
-    //Update the big bar chart
-    update();
-    
-  }//brushmove
+      //Update the big bar chart
+      this.update();
+      
+    },//brushmove
 
   /////////////////////////////////////////////////////////////
   ////////////////////// Click functions //////////////////////
@@ -310,81 +318,78 @@ function init() {
 
   //Based on http://bl.ocks.org/mbostock/6498000
   //What to do when the user clicks on another location along the brushable bar chart
-  function brushcenter() {
-    var target = d3.event.target,
-        extent = brush.extent(),
-        size = extent[1] - extent[0],
-        range = mini_yScale.range(),
-        y0 = d3.min(range) + size / 2,
-        y1 = d3.max(range) + mini_yScale.rangeBand() - size / 2,
-        center = Math.max( y0, Math.min( y1, d3.mouse(target)[1] ) );
+    brushcenter() {
+      var target = d3.event.target,
+          extent = brush.extent(),
+          size = extent[1] - extent[0],
+          range = mini_yScale.range(),
+          y0 = d3.min(range) + size / 2,
+          y1 = d3.max(range) + mini_yScale.rangeBand() - size / 2,
+          center = Math.max( y0, Math.min( y1, d3.mouse(target)[1] ) );
 
-    d3.event.stopPropagation();
+      d3.event.stopPropagation();
 
-    gBrush
-        .call(brush.extent([center - size / 2, center + size / 2]))
-        .call(brush.event);
+      gBrush
+          .call(brush.extent([center - size / 2, center + size / 2]))
+          .call(brush.event);
 
-  }//brushcenter
+    },//brushcenter
 
   /////////////////////////////////////////////////////////////
   ///////////////////// Scroll functions //////////////////////
   /////////////////////////////////////////////////////////////
 
-  function scroll() {
+    scroll() {
 
-    //Mouse scroll on the mini chart
-    var extent = brush.extent(),
-      size = extent[1] - extent[0],
-      range = mini_yScale.range(),
-      y0 = d3.min(range),
-      y1 = d3.max(range) + mini_yScale.rangeBand(),
-      dy = d3.event.deltaY,
-      topSection;
+      //Mouse scroll on the mini chart
+      var extent = brush.extent(),
+        size = extent[1] - extent[0],
+        range = mini_yScale.range(),
+        y0 = d3.min(range),
+        y1 = d3.max(range) + mini_yScale.rangeBand(),
+        dy = d3.event.deltaY,
+        topSection;
 
-    if ( extent[0] - dy < y0 ) { topSection = y0; } 
-    else if ( extent[1] - dy > y1 ) { topSection = y1 - size; } 
-    else { topSection = extent[0] - dy; }
+      if ( extent[0] - dy < y0 ) { topSection = y0; } 
+      else if ( extent[1] - dy > y1 ) { topSection = y1 - size; } 
+      else { topSection = extent[0] - dy; }
 
-    //Make sure the page doesn't scroll as well
-    d3.event.stopPropagation();
-    d3.event.preventDefault();
+      //Make sure the page doesn't scroll as well
+      d3.event.stopPropagation();
+      d3.event.preventDefault();
 
-    gBrush
-        .call(brush.extent([ topSection, topSection + size ]))
-        .call(brush.event);
+      gBrush
+          .call(brush.extent([ topSection, topSection + size ]))
+          .call(brush.event);
 
-  }//scroll
+    },//scroll
 
   /////////////////////////////////////////////////////////////
   ///////////////////// Helper functions //////////////////////
   /////////////////////////////////////////////////////////////
 
   //Create a gradient 
-  function createGradient(idName, endPerc) {
+    createGradient(idName, endPerc) {
 
-    var coloursRainbow = ["#EFB605", "#E9A501", "#E48405", "#E34914", "#DE0D2B", "#CF003E", "#B90050", "#A30F65", "#8E297E", "#724097", "#4F54A8", "#296DA4", "#0C8B8C", "#0DA471", "#39B15E", "#7EB852"];
+      var coloursRainbow = ["#EFB605", "#E9A501", "#E48405", "#E34914", "#DE0D2B", "#CF003E", "#B90050", "#A30F65", "#8E297E", "#724097", "#4F54A8", "#296DA4", "#0C8B8C", "#0DA471", "#39B15E", "#7EB852"];
 
-    defs.append("linearGradient")
-      .attr("id", idName)
-      .attr("gradientUnits", "userSpaceOnUse")
-      .attr("x1", "0%").attr("y1", "0%")
-      .attr("x2", endPerc).attr("y2", "0%")
-      .selectAll("stop") 
-      .data(coloursRainbow)                  
-      .enter().append("stop") 
-      .attr("offset", function(d,i) { return i/(coloursRainbow.length-1); })   
-      .attr("stop-color", function(d) { return d; });
-  }//createGradient
-export default {
-  name: 'Graph',
-  data() {
-    return {
-
-    }
+      defs.append("linearGradient")
+        .attr("id", idName)
+        .attr("gradientUnits", "userSpaceOnUse")
+        .attr("x1", "0%").attr("y1", "0%")
+        .attr("x2", endPerc).attr("y2", "0%")
+        .selectAll("stop") 
+        .data(coloursRainbow)                  
+        .enter().append("stop") 
+        .attr("offset", function(d,i) { return i/(coloursRainbow.length-1); })   
+        .attr("stop-color", function(d) { return d; });
+    },//createGradient
+  },
+  updated() {
+    this.init()
   },
   mounted() {
-    init()
+    this.init()
   }
 }
 </script>

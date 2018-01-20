@@ -8,7 +8,7 @@ const constants = require('../constants');
 module.exports = class KayakFetcher {
 
   constructor() {
-    this.name = constants.PROVIDERS.Kayak;
+    this.name = constants.PROVIDERS.KAYAK;
   }
 
   getProviderUrl(origen, destino, startDate, endDate, adults) {
@@ -32,13 +32,13 @@ module.exports = class KayakFetcher {
         const url = this.getProviderUrl(origen, destino, startDate, endDate, adults);
         await page.goto(url);
 
-        await fetcherCommons.waitForElement(page, '.price_label');
+        await fetcherCommons.waitForElement(page, '.best-flights-header');
 
         // const recomendedPriceEl = await fetcherCommons.waitForElement(page, '.od-price-container .od-resultpage-price-text-int');
         // const recomendedPrice = await fetcherCommons.getInnerText(recomendedPriceEl);
         // const recomendedDurationEl = await fetcherCommons.waitForElement(page, '.od-primary-flight-info-duration .odf-text-nowrap');
         // const recomendedDuration = await fetcherCommons.getInnerText(recomendedDurationEl);
-        const bestPriceEl = await fetcherCommons.waitForElement(page, '.Common-Booking-MultiBookProvider  .price');
+        const bestPriceEl = await fetcherCommons.waitForElement(page, '.Common-Booking-MultiBookProvider .price');
         const bestPrice = await fetcherCommons.getInnerText(bestPriceEl);
         // const bestDurationEl = await fetcherCommons.waitForElement(page, '.od-primary-flight-info-duration .odf-text-nowrap');
         // const bestDuration = await fetcherCommons.getInnerText(bestDurationEl);

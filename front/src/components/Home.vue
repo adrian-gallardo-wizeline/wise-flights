@@ -81,6 +81,11 @@
 <script>
 import axios from 'axios'
 import iataCodes from '../assets/iata'
+
+iataCodes.forEach(iataCode => {
+  iataCode.value += ` (${iataCode.code})`
+})
+
 export default {
   name: 'Home',
   data() {
@@ -94,7 +99,7 @@ export default {
         departureRange: '',
         minDays: 0,
         maxDays: 0,
-        email: 'test@wizeline.com',
+        email: '',
       },
       rules: {
         origin: [
