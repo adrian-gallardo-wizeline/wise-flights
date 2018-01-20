@@ -44,7 +44,8 @@ class FetcherApp {
     };
     const url = process.env.API_URL + '/job/' + job.id;
     console.log('update job', url, newData);
-    return axios.put(url, newData).then(response => {
+    return axios.patch(url, newData).then(response => {
+      console.log('PATH RESULT', response.data);
       return response.data;
     });
   }
