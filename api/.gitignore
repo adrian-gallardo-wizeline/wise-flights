@@ -122,6 +122,7 @@ nbproject
 .idea
 .node_history
 dump.rdb
+yarn.lock
 
 npm-debug.log
 lib-cov
