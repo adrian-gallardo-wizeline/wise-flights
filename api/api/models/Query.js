@@ -7,14 +7,17 @@
 
 module.exports = {
   attributes: {
-    id: { type: 'number', autoIncrement: true },
-    createdAt: { type: 'number', autoCreatedAt: true },
+
     code: { type: 'string' },
     adults: { type: 'number' },
     email: { type: 'string' },
     origin: { type: 'string' },
     destination: { type: 'string' },
+    createdAt: { type: 'number', autoCreatedAt: true },
+
     totalJobs: { type: 'number' },
     completedJobs: { type: 'number', defaultsTo: 0 },
+
+    jobs: { collection: 'job', via: 'owner' },
   }
 };
